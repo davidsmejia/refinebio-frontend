@@ -139,7 +139,7 @@ export function useLoader(fetch, updateProps = []) {
 
   React.useEffect(() => {
     fetchDataCallback();
-  }, [fetchDataCallback, ...updateProps]);
+  }, [fetchDataCallback]);
 
   return {
     ...state,
