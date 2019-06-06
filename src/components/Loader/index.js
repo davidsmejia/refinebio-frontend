@@ -131,7 +131,8 @@ export function useLoader(fetch) {
 
   const fetchDataRef = React.useRef(fetchData);
 
-  // use getData to
+  // use fetchData in effect hooks in your component!
+  // don't forget to pass in params in necessary
   return {
     fetchData: fetchDataRef.current,
     ...state,
