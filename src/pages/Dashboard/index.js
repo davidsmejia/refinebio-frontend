@@ -16,14 +16,20 @@ function Dashboard(props) {
     rangeParam = 'day';
   }
   const [range, setRange] = React.useState(rangeParam);
-  const { data, refresh, isLoading, hasError } = useLoader(async () => {
-    const stats = await fetchDashboardData(range);
-    return getDashboardChartConfig(stats, range);
-  }, [range]);
+  const { data, isLoading, hasError, fetchData } = useLoader(
+    async fetchRange => {
+      const stats = await fetchDashboardData(fetchRange);
+      return getDashboardChartConfig(stats, fetchRange);
+    }
+  );
+
+  React.useEffect(() => {
+    fetchData(range);
+  }, [fetchData, range]);
 
   // refresh data every 10 mins
   useInterval(() => {
-    if (data) refresh();
+    if (data) fetchData(range);
   }, 10 * 60 * 1000);
 
   if (hasError) {

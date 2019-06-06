@@ -13,8 +13,10 @@ import Header from './Header';
 import ServerErrorPage from '../ServerError';
 
 export default function ExecutiveDashboard() {
-  const { data, hasError, refresh } = useLoader(fetchDashboardData);
-
+  const { data, hasError, fetchData: refresh } = useLoader(fetchDashboardData);
+  React.useEffect(() => {
+    refresh();
+  }, [refresh]);
   // refresh data every 5 mins
   useInterval(() => {
     if (data) refresh();

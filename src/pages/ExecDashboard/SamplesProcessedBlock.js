@@ -22,9 +22,14 @@ export default function SamplesProcessedBlock() {
       : interval === MONTH
       ? 'month'
       : 'year';
-  const { data, isLoading } = useLoader(() => fetchDashboardData(rangeParam), [
-    rangeParam,
-  ]);
+  const { data, isLoading, fetchData } = useLoader(newRange => {
+    return fetchDashboardData(newRange);
+  });
+
+  React.useEffect(() => {
+    fetchData(rangeParam);
+  }, [fetchData, rangeParam]);
+
   const totalSamples = !isLoading
     ? data.processed_samples.timeline.reduce((acc, x) => acc + x.total, 0)
     : 0;
