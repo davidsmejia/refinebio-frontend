@@ -85,14 +85,12 @@ const dataFetchReducer = (state, action) => {
       return {
         ...state,
         isLoading: true,
-        hasError: false,
         error: null,
       };
     case 'FETCH_SUCCESS':
       return {
         ...state,
         isLoading: false,
-        hasError: false,
         error: null,
         data: action.payload,
       };
@@ -100,7 +98,6 @@ const dataFetchReducer = (state, action) => {
       return {
         ...state,
         isLoading: false,
-        hasError: true,
         error: action.payload,
       };
     default:
@@ -111,36 +108,33 @@ const dataFetchReducer = (state, action) => {
 /**
  *
  * @param {*} fetch Async function that returns data
- * @param {*} updateProps Similar to `useEffect` dependencies, you can add any values here that invalidate the result of `fetch`
  */
-export function useLoader(fetch, updateProps = []) {
-  const fetchDataCallback = React.useCallback(
-    async function fetchData() {
-      dispatch({ type: 'FETCH_INIT' });
-      try {
-        const data = await fetch();
-        dispatch({ type: 'FETCH_SUCCESS', payload: data });
-      } catch (error) {
-        dispatch({ type: 'FETCH_FAILURE', payload: error });
-      }
-    },
-    [fetch, ...updateProps] // eslint-disable-line react-hooks/exhaustive-deps
-  );
-  // Using a reducer helps remove the `state` dependency from the effect below
+export function useLoader(fetch) {
   // React guarantees that `dispatch` is unique accross renders.
   // https://overreacted.io/a-complete-guide-to-useeffect/#why-usereducer-is-the-cheat-mode-of-hooks
   const [state, dispatch] = React.useReducer(dataFetchReducer, {
-    refresh: fetchDataCallback,
     isLoading: true,
     error: null,
-    hasError: false,
     data: null,
   });
 
-  // Call fetch when properties change.
-  React.useEffect(() => {
-    fetchDataCallback();
-  }, [...updateProps]); // eslint-disable-line react-hooks/exhaustive-deps
+  // wrap fetch with default behavior
+  const fetchData = async (...updateProps) => {
+    dispatch({ type: 'FETCH_INIT' });
+    try {
+      const data = await fetch(...updateProps);
+      dispatch({ type: 'FETCH_SUCCESS', payload: data });
+    } catch (error) {
+      dispatch({ type: 'FETCH_FAILURE', payload: error });
+    }
+  };
 
-  return state;
+  const fetchDataRef = React.useRef(fetchData);
+
+  // use getData to
+  return {
+    fetchData: fetchDataRef.current,
+    ...state,
+    hasError: !!state.error,
+  };
 }
