@@ -100,6 +100,9 @@ export default class HorizontalScroll extends React.Component {
 }
 
 function ButtonLeft({ onClick, disabled }) {
+  const ref = useRef();
+  const isVisible = useVisibility(ref.current);
+
   return (
     <button
       type="button"
@@ -109,7 +112,15 @@ function ButtonLeft({ onClick, disabled }) {
       })}
       onClick={onClick}
     >
-      <div className="horizontal-scroll__button">{'<'}</div>
+      <div
+        ref={ref}
+        className={classnames({
+          'horizontal-scroll__button': true,
+          'horizontal-scroll__button--animate': isVisible,
+        })}
+      >
+        {'<'}
+      </div>
     </button>
   );
 }
