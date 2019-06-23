@@ -12,6 +12,31 @@ import { push, replace } from '../routerActions';
 import { createToken, clearToken } from '../token';
 import { ServerError, InvalidTokenError } from '../../common/errors';
 
+const dispatchQueue = {};
+
+const queueDispatch = async (channel, dispatched) => {
+  // create queue channel if it doesnt exist
+  if (!dispatchQueue[channel]) dispatchQueue[channel] = [];
+
+  const queue = dispatchQueue[channel];
+
+  const promise = new Promise((resolve, reject) => {
+    const performDispatched = () =>
+      dispatched()
+        .then(resolve)
+        .catch(reject);
+
+    if (queue.length !== 0) {
+      queue[queue.length - 1].then(performDispatched);
+    } else {
+      performDispatched();
+    }
+  });
+
+  queue.push(promise);
+  return promise;
+};
+
 // Drop the current dataset from the storage, it will still remain in the db
 export const dropDataSet = () => dispatch => {
   dispatch({
@@ -101,24 +126,33 @@ const dataSetUpdateOperation = (modifier, details = false) => async (
  * Takes an array of experiment objects and adds to users dataset via endpoint
  * @param {object} dataSetSlice
  */
-export const addSamples = dataSetSlice => async dispatch =>
-  dispatch(
-    dataSetUpdateOperation(dataSet =>
-      new DataSetManager(dataSet).add(dataSetSlice)
+export const addSamples = dataSetSlice => async dispatch => {
+  queueDispatch('dataSetUpdateOperation', () =>
+    dispatch(
+      dataSetUpdateOperation(dataSet =>
+        new DataSetManager(dataSet).add(dataSetSlice)
+      )
     )
   );
+};
 
 /**
  * Removes all experiments with the corresponding accession codes from dataset
  * @param {array} accessionCodes
  */
-export const removeExperiment = (accessionCodes, details = false) => dispatch =>
-  dispatch(
-    dataSetUpdateOperation(
-      dataSet => new DataSetManager(dataSet).removeExperiment(accessionCodes),
-      details
+export const removeExperiment = (
+  accessionCodes,
+  details = false
+) => async dispatch => {
+  queueDispatch('dataSetUpdateOperation', () =>
+    dispatch(
+      dataSetUpdateOperation(
+        dataSet => new DataSetManager(dataSet).removeExperiment(accessionCodes),
+        details
+      )
     )
   );
+};
 
 /**
  * Removes all samples with corresponding ids from each experiment in dataset.
@@ -127,13 +161,16 @@ export const removeExperiment = (accessionCodes, details = false) => dispatch =>
 export const removeSamples = (
   dataSetSlice,
   details = false
-) => async dispatch =>
-  dispatch(
-    dataSetUpdateOperation(
-      dataSet => new DataSetManager(dataSet).remove(dataSetSlice),
-      details
+) => async dispatch => {
+  queueDispatch('dataSetUpdateOperation', () =>
+    dispatch(
+      dataSetUpdateOperation(
+        dataSet => new DataSetManager(dataSet).remove(dataSetSlice),
+        details
+      )
     )
   );
+};
 
 /**
  * Use the dataset from the state
